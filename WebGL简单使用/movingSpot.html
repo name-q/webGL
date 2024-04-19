@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>移动点</title>
+
+    <script src="./lib/index.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        #canvas {
+            background: rgb(232, 232, 232);
+        }
+
+        body::after {
+            content: ' ';
+            display: block;
+            width: 1px;
+            height: 400px;
+            background: rgb(0, 221, 255);
+            position: absolute;
+            top: 0;
+            left: 200px;
+        }
+
+        body::before {
+            content: ' ';
+            display: block;
+            width: 400px;
+            height: 1px;
+            background: rgb(0, 221, 255);
+            position: absolute;
+            top: 200px;
+            left: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas" width="400" height="400">
+        此浏览器不支持canvas
+    </canvas>
+</body>
+
+</html>
+
+
+
+<script>
+    const ctx = document.getElementById('canvas')
+    const gl = ctx.getContext('webgl')
+
+    // 着色器
+
+    // 创建着色器源码
+    // 顶点着色器 xyzw   w-其次坐标  => (x/w, y/w, z/w)
+    const VERTEX_SHADER_SOURCE = `
+        // attribute变量 只能在顶点着色器中使用 @ attribute 类型 变量名;
+        attribute vec4 aPosition; 
+        // main 入口 必须存在
+        void main() {
+            // 点的坐标
+            gl_Position = aPosition;
+            // 点的大小
+            gl_PointSize = 20.0;
+        }
+    `
+
+    // 片元着色器 像素px
+    const FRAGMENT_SHADER_SOURCE = `
+        void main() {
+            // rgba
+            gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+        }
+    `
+
+    const program = initShader(gl, VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE);
+
+    // 获取attribute变量的地址后设置值
+    const aPosition = gl.getAttribLocation(program, 'aPosition');
+    // gl.vertexAttrib4f(aPosition, 0.5, 0.5, 0.0, 1.0)
+    // gl.vertexAttrib3f(aPosition, 0.5, 0.5, 0.0)
+    // gl.vertexAttrib2f(aPosition, 0.5, 0.5)
+    //  = gl.vertexAttrib2f(aPosition, 0.5, 0.0)
+    // gl.vertexAttrib1f(aPosition, 0.5)
+
+    // 执行绘制
+    // @ 绘制什么图形 从哪里开始 使用几个顶点
+    // gl.drawArrays(gl.POINTS, 0, 1);
+
+    let x = 0
+    setInterval(() => {
+        x += 0.1;
+        if (x > 1) x = 0
+        gl.vertexAttrib4f(aPosition, x, 0.0, 0.0, 1.0)
+        gl.drawArrays(gl.POINTS, 0, 1);
+    }, 60)
+
+</script>

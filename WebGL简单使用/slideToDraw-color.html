@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鼠标滑动绘制点-修改点的颜色</title>
+
+    <script src="./lib/index.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        #canvas {
+            margin: 50px auto 0;
+            display: block;
+            background-color: rgb(204, 245, 242);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas" width="400" height="400">
+        此浏览器不支持canvas
+    </canvas>
+</body>
+
+</html>
+
+
+
+<script>
+    const ctx = document.getElementById('canvas')
+    const gl = ctx.getContext('webgl')
+
+    // 着色器
+
+    // 创建着色器源码
+    // 顶点着色器 xyzw   w-其次坐标  => (x/w, y/w, z/w)
+    const VERTEX_SHADER_SOURCE = `
+        // attribute变量 只能在顶点着色器中使用 @ attribute 类型 变量名;
+        attribute vec4 aPosition; 
+        // main 入口 必须存在
+        void main() {
+            // 点的坐标
+            gl_Position = aPosition;
+            // 点的大小
+            gl_PointSize = 2.333333;
+        }
+    `
+
+    // 片元着色器 像素px
+    const FRAGMENT_SHADER_SOURCE = `
+        // 指定浮点数精度为中精度 高精度highp 低精度lowp
+        precision mediump float;
+        // 如果这里使用vec2作为入参
+        // 则gl_FragColor = vec4(uColor.r, uColor.g, 0.0, 1.0);
+        // 不存在vec1 如外部使用1f则声明float;
+        uniform vec4 uColor;
+        void main() {
+            // rgba
+            gl_FragColor = uColor;
+        }
+    `
+
+    const program = initShader(gl, VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE);
+
+    // 获取attribute变量的地址后设置值
+    const aPosition = gl.getAttribLocation(program, 'aPosition');
+    // gl.vertexAttrib4f(aPosition, 0.5, 0.5, 0.0, 1.0)
+    // gl.vertexAttrib3f(aPosition, 0.5, 0.5, 0.0)
+    // gl.vertexAttrib2f(aPosition, 0.5, 0.5)
+    //  = gl.vertexAttrib2f(aPosition, 0.5, 0.0)
+    // gl.vertexAttrib1f(aPosition, 0.5)
+
+    // 获取uniform变量的地址后设置值
+    const uColor = gl.getUniformLocation(program, 'uColor');
+    // gl.uniform4f(uColor, 1.0, 0.0, 0.0, 1.0)
+    // 执行绘制
+    // @ 绘制什么图形 从哪里开始 使用几个顶点
+    // gl.drawArrays(gl.POINTS, 0, 1);
+
+
+    // 存储鼠标移入数据
+    const points = []
+    // 生成范围在0.0到1.0之间的随机数
+    function getRandomNumber() {
+        return parseFloat((Math.random()).toFixed(1));
+    }
+
+    ctx.onmousemove = (ev) => {
+        const x = ev.clientX
+        const y = ev.clientY
+        // canvas所在位置
+        const domPosition = ev.target.getBoundingClientRect()
+        // console.log(domPosition, '<<<<domPosition')
+
+        // 相对画布位置
+        const domx = x - domPosition.left;
+        const domy = y - domPosition.top;
+
+        // 一半的画布宽高
+        const halfWidth = domPosition.width / 2
+        const halfHeight = domPosition.height / 2
+
+        // 获取 x和y的参数 -1 ～ 1 
+        const clickX = (domx - halfWidth) / halfWidth
+        const clickY = (halfHeight - domy) / halfHeight
+        console.log(clickX, clickY)
+
+        let r, g, b, a
+        r = getRandomNumber()
+        g = getRandomNumber()
+        b = getRandomNumber()
+        a = getRandomNumber()
+
+        points.push({ clickX, clickY, r, g, b, a })
+
+        for (const iterator of points) {
+            gl.vertexAttrib2f(aPosition, iterator.clickX, iterator.clickY)
+            gl.uniform4f(uColor, iterator.r, iterator.g, iterator.b, iterator.a)
+
+            gl.drawArrays(gl.POINTS, 0, 1);
+        }
+
+    }
+
+</script>
